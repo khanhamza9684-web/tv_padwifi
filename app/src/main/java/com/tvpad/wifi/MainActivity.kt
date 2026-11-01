@@ -28,6 +28,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -62,9 +63,16 @@ class MainVM(app: Application) : AndroidViewModel(app) {
     var busy by mutableStateOf(false)
         private set
     val found = mutableStateListOf<Pair<String, String>>()
+    var useAdb by mutableStateOf(prefs.getBoolean("adb", false))
+        private set
+
+    fun setAdb(on: Boolean) {
+        useAdb = on
+        prefs.edit().putBoolean("adb", on).apply()
+    }
 
     private var pairing: PairingSession? = null
-    private var remote: RemoteSession? = null
+    private var remote: KeySender? = null
     private val discovery = Discovery(app) { name, ip ->
         if (found.none { it.second == ip }) found.add(name to ip)
     }
@@ -92,9 +100,16 @@ class MainVM(app: Application) : AndroidViewModel(app) {
         val paired = isPaired(ip) && !forcePair
         viewModelScope.launch(Dispatchers.IO) {
             busy = true
-            status = if (paired) "Connecting..." else "Asking the TV to pair..."
+            status = when {
+                useAdb -> "Connecting... look at the TV and tap Allow (tick Always allow)"
+                paired -> "Connecting..."
+                else -> "Asking the TV to pair..."
+            }
             try {
-                if (paired) {
+                if (useAdb) {
+                    remote = AdbSession(getApplication(), ip).also { it.connect() }
+                    screen = Screen.REMOTE
+                } else if (paired) {
                     remote = RemoteSession(ip).also { it.connect() }
                     screen = Screen.REMOTE
                 } else {
@@ -131,13 +146,13 @@ class MainVM(app: Application) : AndroidViewModel(app) {
     }
 
     @Synchronized
-    private fun session(): RemoteSession {
+    private fun session(): KeySender {
         val r = remote
         if (r != null && r.open) return r
-        return RemoteSession(host).also {
-            it.connect()
-            remote = it
-        }
+        val n: KeySender = if (useAdb) AdbSession(getApplication(), host) else RemoteSession(host)
+        n.connect()
+        remote = n
+        return n
     }
 
     fun key(code: Int) {
@@ -205,6 +220,18 @@ private fun ConnectScreen(vm: MainVM) {
         }
 
         Spacer(Modifier.height(8.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Switch(checked = vm.useAdb, onCheckedChange = { vm.setAdb(it) })
+            Spacer(Modifier.padding(start = 8.dp))
+            Text("USB debugging (ADB) mode", fontWeight = FontWeight.SemiBold)
+        }
+        if (vm.useAdb) {
+            Text(
+                "On the TV: Settings > About > tap Build 7 times, then Developer options > turn on " +
+                    "USB debugging (and network/ADB debugging if shown). Enter the TV's IP below. " +
+                    "The first time, the TV asks to allow this phone: tick Always allow."
+            )
+        }
         OutlinedTextField(
             value = vm.host,
             onValueChange = { vm.host = it },

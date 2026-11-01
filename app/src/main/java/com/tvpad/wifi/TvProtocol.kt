@@ -158,14 +158,22 @@ object Keys {
     const val SETTINGS = 176
 }
 
+/** Anything that can send TV key presses (Wi-Fi remote protocol or ADB). */
+interface KeySender {
+    val open: Boolean
+    fun connect()
+    fun key(code: Int)
+    fun close()
+}
+
 /** The live remote channel. Port 6466. */
-class RemoteSession(private val host: String) {
+class RemoteSession(private val host: String) : KeySender {
     private var sock: SSLSocket? = null
     private val lock = Any()
     private val ready = CountDownLatch(1)
 
     @Volatile
-    var open = false
+    override var open = false
         private set
 
     private fun send(msg: PW) = synchronized(lock) {
@@ -174,7 +182,7 @@ class RemoteSession(private val host: String) {
         s.outputStream.flush()
     }
 
-    fun connect() {
+    override fun connect() {
         val s = Identity.open(host, 6466)
         sock = s
         open = true
@@ -218,11 +226,11 @@ class RemoteSession(private val host: String) {
     }
 
     /** direction 3 = a single short press. */
-    fun key(code: Int, direction: Int = 3) {
-        send(PW().msg(10, PW().int(1, code).int(2, direction)))
+    override fun key(code: Int) {
+        send(PW().msg(10, PW().int(1, code).int(2, 3)))
     }
 
-    fun close() {
+    override fun close() {
         open = false
         runCatching { sock?.close() }
     }
