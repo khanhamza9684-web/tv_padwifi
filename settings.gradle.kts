@@ -12,5 +12,5 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-rootProject.name = "TVPadWifi"
-include(":app")
+rootProject.name = "TVPad"
+include(":app", ":tv")

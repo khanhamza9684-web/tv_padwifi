@@ -4,12 +4,12 @@ plugins {
 }
 
 android {
-    namespace = "com.tvpad.wifi"
+    namespace = "com.tvpad.pad"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.tvpad.wifi"
-        minSdk = 26
+        applicationId = "com.tvpad.pad"
+        minSdk = 28
         targetSdk = 34
         versionCode = 1
         versionName = "1.0.0"

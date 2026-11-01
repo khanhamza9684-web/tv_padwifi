@@ -1,26 +1,24 @@
-# TV Pad Wi-Fi
+# TV Pad
 
-A Wi-Fi remote for Android TV / Google TV (including Mi TV A-series). It uses the same
-Android TV Remote protocol v2 as the Google TV app and Zank Remote, so there is no Bluetooth pairing.
+Use your phone as a gamepad for your TV (built for Mi TV / Android TV).
 
-## Get the APK
-1. Push this repo to GitHub.
-2. Open the **Actions** tab, then the latest **Build APK** run.
-3. Download the **TVPad-WiFi-debug-apk** artifact, unzip it and install `app-debug.apk` on your phone.
+Two apps, both built automatically by GitHub Actions:
 
-(Or open the folder in Android Studio and press Run.)
+- **Phone app** (`app/`): Bluetooth gamepad (full gamepad with two analog sticks, D-pad, A/B/X/Y,
+  L1/R1/L2/R2, Select/Start/Home) and a Wi-Fi gamepad over ADB (buttons only).
+- **TV Pad Helper** (`tv/`): install on the TV. Shows the TV's IP address, how to pair, and a live
+  display of every button the phone sends, so you can test the connection.
 
-## Use
-1. Put the phone and TV on the same Wi-Fi.
-2. Open the app. Your TV should appear under "TVs found". Otherwise type its IP address
-   (TV: Settings > Network).
-3. Tap the TV. A 6 character code appears on the TV. Type it in the app. You only do this once.
-4. Use the remote.
+## Get the APKs
+Actions tab > latest **Build APKs** run > download **TVPad-phone-apk** and **TVPad-TV-helper-apk**.
+Unzip each to get the `.apk`.
 
-## How it works
-- mDNS discovery of `_androidtvremote2._tcp` (Discovery.kt)
-- TLS pairing on port 6467 using a client certificate kept in the Android KeyStore (TvProtocol.kt)
-- Remote key presses on port 6466 (TvProtocol.kt)
-- Protobuf is hand encoded in Proto.kt, so there are no code generation steps.
+## Bluetooth mode
+1. TV: Settings > Remotes & Accessories > Add accessory.
+2. Phone: TV Pad > Bluetooth gamepad > Make phone visible.
+3. Choose the phone on the TV and accept pairing. The pad opens when connected.
 
-The TV's own certificate is not validated (it is self-signed), so use this on a network you trust.
+## Wi-Fi (ADB) mode
+1. TV: turn on Developer options > USB debugging.
+2. Phone: TV Pad > Wi-Fi gamepad > type the TV's IP (shown in TV Pad Helper) > Connect.
+3. Tap Allow on the TV (tick Always allow).
